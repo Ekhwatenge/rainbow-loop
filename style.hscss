@@ -1,0 +1,164 @@
+// *******
+// SASS Variables for loops and calculations
+// *******
+// These vars are mainly used for loops
+  $visibleWaveCount: 4; // visible on screen
+  $actuaWaveCountTop: $visibleWaveCount + 1; // extra top wave for animation
+  $actuaWaveCountBottom: $visibleWaveCount + 2; // extra bottom waves for animation
+  $nbrOfStripes: 7; // Color or transparency
+
+
+// *******
+// CSS Custom props for adjusting the look of it all
+// *******
+:root {
+  // Available colors
+  --color-transparent: transparent;
+  --color-red: #F2C9B2;
+  --color-yellow: #ECF4D6;
+  --color-green: #AFDCC4;
+  --color-blue: #91DAEA;
+  --color-purple: #E4C1ED;
+  
+  --color-text: #222;
+  --color-background: #F5E5EE;
+  
+  --animation-speed: 2000ms;
+    
+  --rainbow-width: calc(100/#{$visibleWaveCount}*1vw);
+  --rainbow-stripe-width: calc(var(--rainbow-width)/2/#{$nbrOfStripes});
+}
+.rainbow {
+  &__top {
+    // Color scheme for top-half waves
+    --color-0: var(--color-transparent);
+    --color-1: var(--color-purple);
+    --color-2: var(--color-blue);
+    --color-3: var(--color-green);
+    --color-4: var(--color-yellow);
+    --color-5: var(--color-red);
+    --color-6: var(--color-transparent);
+    // Alignment for gradients in top half
+    --gradient-y-align: 100%;
+    --gradient-x-offset: 0.5;
+  }
+  &__bottom {
+    // Color scheme for bottom half waves
+    --color-0: var(--color-transparent);
+    --color-1: var(--color-red);
+    --color-2: var(--color-yellow);
+    --color-3: var(--color-green);
+    --color-4: var(--color-blue);
+    --color-5: var(--color-purple);
+    --color-6: var(--color-transparent);
+    
+    // Alignment for gradients in bottom half
+    --gradient-y-align: 0;
+    --gradient-x-offset: 0;
+    
+  }
+}
+
+// *******
+// SASS functions for automation
+// *******
+// Function for printing a set of rainbow stripes in a background-image
+// Output: a string of comma separated color stops for a radial-gradient()
+@function getRainbowStripesForBackgroundImage($nbrOfStripes) {
+  $output: '';
+    @for $i from 0 to $nbrOfStripes {
+      $color: var(--color-#{$i});
+      $colorStopFrom: calc(var(--rainbow-stripe-width) * #{$i});
+      $colorStopTo: calc(var(--rainbow-stripe-width) * #{$i+1});
+      
+      $output: #{$output}, $color $colorStopFrom $colorStopTo;
+    }
+  
+  // extra outer transparency, so that the last color (if it's a color) does not obscure other waves
+  $transparent: var(--color-transparent);
+  $transparentColorStopFrom: calc(var(--rainbow-stripe-width) * #{$nbrOfStripes});
+  $output: #{$output}, $transparent $transparentColorStopFrom;
+  
+  @return $output;
+}
+
+// Function for printing a set of rainbow gradients
+// Outputs a string of comma separated radial-gradients for background-image
+@function getRainbowBackgroundImages($nbrOfReps, $nbrOfStripes) {
+  $output: '';
+  @for $i from 0 to $nbrOfReps {
+    $wavePositionX: calc(var(--rainbow-width)*calc(var(--gradient-x-offset) + #{$i}));
+    $wavePositionY: var(--gradient-y-align);
+    $output: #{$output}, 
+      radial-gradient(circle at $wavePositionX $wavePositionY,
+        getRainbowStripesForBackgroundImage($nbrOfStripes)
+      );
+  }
+  @return $output;
+}
+
+
+// *******
+// Styles
+// *******
+@import url('https://fonts.googleapis.com/css2?family=Fugaz+One&display=swap');
+body {
+  background-color: var(--color-background);
+  margin: 0;
+}
+.rainbow {
+  bottom: 0;
+  height: var(--rainbow-width);
+  margin: auto;
+  position: absolute;
+  top: 0;
+  // Limit width in order to animate with transform on div-children (instead of background-position)
+  overflow: hidden;
+  width: 100vw;
+  & div {
+    animation: rainbowRoll var(--animation-speed) linear infinite;
+    height: 50%;
+    // Set width in order to animate this with transform instead of background-position
+    width: calc(100vw + var(--rainbow-width));
+  }
+  &--reverse div {
+    animation-direction: reverse;
+  }
+  
+  &__top {
+    // Print gradients with sass-functions
+    background-image: 
+      getRainbowBackgroundImages($actuaWaveCountTop, $nbrOfStripes);
+  }
+  
+  &__bottom {
+    // Print gradients with sass-functions
+    background-image: 
+      getRainbowBackgroundImages($actuaWaveCountBottom, $nbrOfStripes);
+  }
+
+}
+
+.contents {
+  display: flex;
+  height: 100vh;
+  position: relative;
+  
+  h1 {
+    color: var(--color-text);
+    font: calc(var(--rainbow-width)*0.27) 'Fugaz One', sans-serif;
+    letter-spacing: -.02em;
+    text-align: center;
+    margin: auto;
+  }
+}
+
+// Animate
+@keyframes rainbowRoll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(var(--rainbow-width)*-1));
+  }
+}
